@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create or Import Ethereum Wallet and Send Tokens</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            padding-top: 20px;
+        }
+        .container {
+            width: 50%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        form, select, button {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            width: 30%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"], .form-group select {
+            width: 80%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .form-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #wallet, #importedWallet, #balance, #fees, #transaction, #Transaction_status, 
+        #dataTransaction, #dataTransaction_status {
+            margin-top: 10px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            word-wrap: break-word;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .success {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .transaction-hash {
+            font-family: monospace;
+            background-color: #f4f4f4;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Ethereum Wallet Manager</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Security Warning:</strong> Never share your private key with anyone. This application runs in your browser and your keys never leave your device.
+        </div>
+
+        <!-- Network Selection -->
+        <div class="section">
+            <h2>Network Configuration</h2>
+            <div class="form-group">
+                <label for="network">Network:</label>
+                <select id="network">
+                    <option value="mainnet">Ethereum Mainnet</option>
+                    <option value="holesky">Holesky Testnet</option>
+                    <option value="sepolia">Sepolia Testnet</option>
+                </select>
+            </div>
+            <div class="info-box">
+                <strong>Note:</strong> Testnets are for testing purposes only. Use mainnet for real transactions.
+            </div>
+        </div>
+
+        <!-- Wallet Management -->
+        <div class="section">
+            <h2>Wallet Management</h2>
+            <div id="walletdiv">
+                <!-- Create Wallet Section -->
+                <button onclick="createWallet()">Create New Wallet</button>
+                
+                <!-- Import Wallet Section -->
+                <form id="importForm">
+                    <div class="form-group">
+                        <label for="privateKey">Private Key:</label>
+                        <input type="text" id="privateKey" name="privateKey" placeholder="Enter your private key (0x...)" required>
+                    </div>
+                    <button type="button" onclick="importWallet()">Import Wallet</button>
+                </form>
+            </div>
+            
+            <div id="wallet"></div>
+            <div id="downloadWalletdiv"></div>
+        </div>
+
+        <!-- Balance Check -->
+        <div class="section">
+            <h2>Balance Information</h2>
+            <button onclick="checkBalance()">Check Balance</button>
+            <div id="balance"></div>
+        </div>
+
+        <!-- Send Tokens Section -->
+        <div class="section">
+            <h2>Send Tokens</h2>
+            <form id="sendForm">
+                <div class="form-group">
+                    <label for="toAddress">To Address:</label>
+                    <input type="text" id="toAddress" name="toAddress" placeholder="0x..." required>
+                </div>
+                <div class="form-group">
+                    <label for="token">Token:</label>
+                    <select id="token">
+                        <option value="eth">ETH</option>
+                        <option value="usdt">USDT</option>
+                        <option value="usdc">USDC</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount:</label>
+                    <input type="text" id="amount" name="amount" value="0" required>
+                </div>
+                <button type="button" onclick="SendToken()">Send Tokens</button>
+            </form>
+            <div id="transaction"></div>
+            <div id="Transaction_status"></div>
+        </div>
+
+        <!-- Send Data Section -->
+        <div class="section">
+            <h2>Send Data to Blockchain</h2>
+            <form id="sendDataForm">
+                <div class="form-group">
+                    <label for="dataToAddress">To Address:</label>
+                    <input type="text" id="dataToAddress" name="dataToAddress" placeholder="Enter address (optional)">
+                </div>
+                <div class="form-group">
+                    <label for="sendToSelf">
+                        <input type="checkbox" id="sendToSelf" onchange="toggleDataAddress()">
+                        Send to my own address
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="dataMessage">Message (Text or Hex):</label>
+                    <input type="text" id="dataMessage" name="dataMessage" placeholder="Enter your message or hex data (0x...)" required>
+                </div>
+                <button type="button" onclick="sendData()">Send Data to Blockchain</button>
+            </form>
+            <div class="info-box">
+                <strong>Information:</strong> 
+                <ul>
+                    <li>Text messages are automatically converted to hex format</li>
+                    <li>For hex data, start with "0x"</li>
+                    <li>Maximum 1000 characters for text messages</li>
+                    <li>Data is permanently stored on the blockchain</li>
+                </ul>
+            </div>
+            <div id="dataTransaction"></div>
+            <div id="dataTransaction_status"></div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="section">
+            <h2>Recent Transactions</h2>
+            <div id="transactionHistory">
+                <p>Transaction history will appear here after successful transactions.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="section">
+            <div class="info-box">
+                <strong>How to use:</strong>
+                <ol>
+                    <li>Select your network</li>
+                    <li>Create a new wallet or import an existing one</li>
+                    <li>Check your balance</li>
+                    <li>Send tokens or data to the blockchain</li>
+                    <li>Always keep your private key safe and secure</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
