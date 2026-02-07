@@ -4,7 +4,7 @@
 A lightweight web-based application to manage **Ethereum wallets** using **Web3.js**.  
 This project allows users to create or import wallets, check balances, send tokens (ETH, USDT, USDC), and store custom data on the blockchain.
 
-Live Demo: https://crypto-sentiment-app-six.vercel.app/
+Live Demo: https://ethereum-wallet-manager.vercel.app/
 ---
 
 ## 📌 Overview
